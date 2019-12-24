@@ -1,0 +1,34 @@
+if ($user->getLevel() == 63)
+{
+	$message = intval($message);
+	if ($message == 0)
+	{
+		requestVkAPI("messages.send", "peer_id=".$user->getUserId()."&message=Cansel");
+		$user->updateLevel(1);
+		echo 'ok'; die();
+	}
+	
+
+	$photo = imagecreatefrompng("AAA.png");
+	imagettftext($photo, 15, 0, 1200, 28, imagecolorallocate($photo, 255,255,255), 'Panton-BlackCaps.otf',date("H:i")." Обновляется каждую минуту");
+	imagettftext($photo, 50, 0, 1165, 178, imagecolorallocate($photo, 13,116,183), 'Panton-BlackCaps.otf',$message);
+	imagejpeg($photo, 'im.jpg');
+	imagedestroy($photo);
+	
+	$request = requestVkAPI("photos.getOwnerCoverPhotoUploadServer", "group_id=".$GLOBALS['id_group']."&crop_x=0&crop_y=0&crop_x2=1590&crop_y2=400");
+	$curl = curl_init($request['upload_url']);
+	$opts = [
+			CURLOPT_USERAGENT => 'LOCALHOST',
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_SSL_VERIFYPEER => false,
+			CURLOPT_SSL_VERIFYHOST => false,
+			CURLOPT_POSTFIELDS => ['photo' => class_exists("CURLFile", false) ? new CURLFile("im.jpg") : "im.jpg"]
+	]; 
+	curl_setopt_array($curl, $opts);
+	$request = json_decode(curl_exec($curl), true); 
+	curl_close($curl);
+	requestVkAPI("photos.saveOwnerCoverPhoto", "photo={$request['photo']}&hash={$request['hash']}"); 
+	requestVkAPI("messages.send", "peer_id=".$user->getUserId()."&message=Ok");
+	$user->updateLevel(1);
+	echo 'ok'; die();
+}
